@@ -683,8 +683,14 @@ class robin_hash : private Hash, private KeyEqual, private GrowthPolicy {
 
   template <typename P>
   std::pair<iterator, bool> insert(P&& value) {
-    return insert_impl(KeySelect()(value), std::forward<P>(value));
+    const auto& key = KeySelect()(value);
+    return insert_impl(key, hash_key(key), std::forward<P>(value));
   }
+
+  template <typename P>
+    std::pair<iterator, bool> insert(P&& value, std::size_t hash) {
+      return insert_impl(KeySelect()(value), hash, std::forward<P>(value));
+    }
 
   template <typename P>
   iterator insert_hint(const_iterator hint, P&& value) {
@@ -750,7 +756,8 @@ class robin_hash : private Hash, private KeyEqual, private GrowthPolicy {
 
   template <class K, class... Args>
   std::pair<iterator, bool> try_emplace(K&& key, Args&&... args) {
-    return insert_impl(key, std::piecewise_construct,
+    return insert_impl(key, hash_key(key),
+                       std::piecewise_construct,
                        std::forward_as_tuple(std::forward<K>(key)),
                        std::forward_as_tuple(std::forward<Args>(args)...));
   }
@@ -1159,10 +1166,8 @@ class robin_hash : private Hash, private KeyEqual, private GrowthPolicy {
   }
 
   template <class K, class... Args>
-  std::pair<iterator, bool> insert_impl(const K& key,
+  std::pair<iterator, bool> insert_impl(const K& key, std::size_t hash,
                                         Args&&... value_type_args) {
-    const std::size_t hash = hash_key(key);
-
     std::size_t ibucket = bucket_for_hash(hash);
     distance_type dist_from_ideal_bucket = 0;
 

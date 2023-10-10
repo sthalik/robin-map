@@ -234,14 +234,20 @@ class robin_map {
     return m_ht.insert(value);
   }
 
+  std::pair<iterator, bool> insert(const value_type& value,
+                                   std::size_t precalculated_hash) {
+      return m_ht.insert(value, precalculated_hash);
+    }
+
   template <class P, typename std::enable_if<std::is_constructible<
                          value_type, P&&>::value>::type* = nullptr>
   std::pair<iterator, bool> insert(P&& value) {
     return m_ht.emplace(std::forward<P>(value));
   }
 
-  std::pair<iterator, bool> insert(value_type&& value) {
-    return m_ht.insert(std::move(value));
+  std::pair<iterator, bool> insert(value_type&& value,
+                                   std::size_t precalculated_hash) {
+    return m_ht.insert(std::move(value), precalculated_hash);
   }
 
   iterator insert(const_iterator hint, const value_type& value) {
